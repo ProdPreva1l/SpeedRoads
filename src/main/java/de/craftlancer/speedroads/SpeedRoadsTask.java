@@ -1,9 +1,6 @@
 package de.craftlancer.speedroads;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -20,22 +17,26 @@ public class SpeedRoadsTask extends BukkitRunnable {
     private static final int UPDATE_ENTITIY_CACHE = 100;
     private static final UUID MODIFIER_UUID = UUID.fromString("0d2d4303-c228-4075-9f94-00fa3036f40c");
     private static final String MODIFIER_NAME = "SpeedRoads";
-    private static final AttributeModifier EMPTY_MODIFIER = new AttributeModifier(MODIFIER_UUID, MODIFIER_NAME, 0, Operation.ADD_SCALAR);
+    public static final AttributeModifier EMPTY_MODIFIER = new AttributeModifier(MODIFIER_UUID, MODIFIER_NAME, 0, Operation.ADD_SCALAR);
     private final SpeedRoads plugin;
     
     private Map<UUID, Double> currentSpeedMap = new HashMap<>();
     private Map<UUID, Double> targetSpeedMap = new HashMap<>();
-    
+
     private Map<World, Collection<Entity>> affectedEntitiesMap = new HashMap<>();
     private long tickCounter = 0;
-    
+
+    public static final Set<UUID> dontTouchMePlease = new HashSet<>(); // any entity uuids in here will be ignored when doing speed updates
+
     public SpeedRoadsTask(SpeedRoads plugin) {
         this.plugin = plugin;
     }
     
     @Override
     public void run() {
-        Bukkit.getOnlinePlayers().forEach(this::applyAttribute);
+        Bukkit.getOnlinePlayers().stream()
+                .filter(p -> !dontTouchMePlease.contains(p.getUniqueId()))
+                .forEach(this::applyAttribute);
         affectedEntitiesMap.forEach((w, a) -> a.forEach(this::applyAttribute));
         
         if(tickCounter++ % UPDATE_ENTITIY_CACHE == 0 && !plugin.getAffectedEntities().isEmpty())
